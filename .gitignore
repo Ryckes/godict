@@ -1,2 +1,3 @@
 godict
-record.pb.go
+*.pb.go
+godict-store

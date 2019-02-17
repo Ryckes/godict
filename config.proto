@@ -1,0 +1,11 @@
+
+syntax = "proto2";
+
+option go_package = "main";
+
+message Configuration {
+    // Path the store will be read from, and written to.
+    // If the file does not exist when starting, the directory must be writable.
+    // If the file exists, it must contain a valid RecordStore, and be readable.
+    optional string store_path = 1;
+}

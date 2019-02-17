@@ -10,32 +10,23 @@ import (
 	"strings"
 )
 
-var storePath = "/tmp/recordstore"
-
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func storeExists() bool {
+func storeExists(storePath string) bool {
 	_, err := os.Stat(storePath)
 	return !os.IsNotExist(err)
 }
 
-func initializeStore(store *RecordStore) {
-	if !storeExists() {
+func initializeStore(storePath string, store *RecordStore) {
+	log.Printf("Store path: %s.\n", storePath)
+	if !storeExists(storePath) {
 		log.Println("No existing store found. Will initialize a new one.")
 	} else {
 		dat, err := ioutil.ReadFile(storePath)
 		if err != nil {
-			log.Fatalln("Couldn't open store. Exiting.")
-			panic(err)
+			log.Fatalf("Couldn't open store: %s. Exiting.\n", err)
 		}
 		err = proto.Unmarshal(dat, store)
 		if err != nil {
-			log.Fatalln("Couldn't deserialize store. Exiting.")
-			panic(err)
+			log.Fatalf("Couldn't deserialize store: %s. Exiting.\n", err)
 		}
 		log.Printf("Store successfully retrieved from disk. Entries in store: %d\n", len(store.Record))
 	}
@@ -45,27 +36,36 @@ func initializeStore(store *RecordStore) {
 	}
 }
 
-func writeStore(store *RecordStore) {
+func writeStore(storePath string, store *RecordStore) {
 	// TODO: error handling here is pretty bad, attempt to save to a
 	// couple other places (/tmp?, $HOME?) to avoid data loss.
 	marshalled, err := proto.Marshal(store)
 	if err != nil {
-		log.Fatalln("Couldn't serialize new store. Exiting.")
-		panic(err)
+		log.Fatalf("Couldn't serialize new store: %s. Exiting.\n", err)
 	}
 
 	err = ioutil.WriteFile(storePath, marshalled, 0644)
 	if err != nil {
-		log.Fatalln("Couldn't write new store to disk. Exiting.")
-		panic(err)
+		log.Fatalf("Couldn't write new store to disk: %s. Exiting.\n", err)
 	}
 	log.Printf("Store successfully written to disk. Entries in store: %d\n", len(store.Record))
 }
 
+func readConfig(configPath string) *Configuration {
+	config := &Configuration{}
+	data, _ := ioutil.ReadFile(configPath)
+
+	proto.UnmarshalText(string(data), config)
+	return config
+}
+
 func main() {
+	config := readConfig("./config.textproto")
+	storePath := config.GetStorePath()
+	
 	store := &RecordStore{}
 
-	initializeStore(store)
+	initializeStore(storePath, store)
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -89,5 +89,5 @@ func main() {
 		store.Record[text].Count = proto.Int32(store.Record[text].GetCount() + 1)
 	}
 
-	writeStore(store)
+	writeStore(storePath, store)
 }
