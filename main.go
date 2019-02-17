@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"github.com/golang/protobuf/proto"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 var storePath = "/tmp/recordstore"
@@ -26,36 +29,37 @@ func initializeStore(store *RecordStore) {
 	} else {
 		dat, err := ioutil.ReadFile(storePath)
 		if err != nil {
-			log.Fatalf("Couldn't open store: %s. Exiting.\n", err)
-			return
+			log.Fatalln("Couldn't open store. Exiting.")
+			panic(err)
 		}
 		err = proto.Unmarshal(dat, store)
 		if err != nil {
-			log.Fatalf("Couldn't deserialize store: %s. Exiting.\n", err)
-			return
+			log.Fatalln("Couldn't deserialize store. Exiting.")
+			panic(err)
 		}
-		log.Printf("Read from disk: %s\n", store)
+		log.Printf("Store successfully retrieved from disk. Entries in store: %d\n", len(store.Record))
+	}
+
+	if store.Record == nil {
+		store.Record = make(map[string]*Record)
 	}
 }
 
 func writeStore(store *RecordStore) {
 	// TODO: error handling here is pretty bad, attempt to save to a
 	// couple other places (/tmp?, $HOME?) to avoid data loss.
-	// TODO: remove double logging on errors.
 	marshalled, err := proto.Marshal(store)
 	if err != nil {
-		// TODO: this is pretty bad, attempt to save to a couple other
-		// places to avoid data loss.
-		log.Fatalf("Couldn't serialize new store: %s. Exiting.\n", err)
+		log.Fatalln("Couldn't serialize new store. Exiting.")
 		panic(err)
 	}
 
 	err = ioutil.WriteFile(storePath, marshalled, 0644)
 	if err != nil {
-		log.Fatalf("Couldn't write new store to disk: %s. Exiting.\n", err)
+		log.Fatalln("Couldn't write new store to disk. Exiting.")
 		panic(err)
 	}
-	log.Printf("Written to disk: %s\n", store)
+	log.Printf("Store successfully written to disk. Entries in store: %d\n", len(store.Record))
 }
 
 func main() {
@@ -63,6 +67,27 @@ func main() {
 
 	initializeStore(store)
 
-	r := &RecordStore{Record: []*Record{{Word: proto.String("abc"), Count: proto.Int32(1)}}}
-	writeStore(r)
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		text, err := reader.ReadString('\n')
+		if err == io.EOF {
+			log.Println("Quitting...")
+			break
+		}
+
+		text = strings.TrimSpace(text)
+
+		if text == "quit" {
+			log.Println("Quitting...")
+			break
+		}
+
+		if store.Record[text].GetCount() == 0 {
+			store.Record[text] = &Record{}
+		}
+
+		store.Record[text].Count = proto.Int32(store.Record[text].GetCount() + 1)
+	}
+
+	writeStore(store)
 }
