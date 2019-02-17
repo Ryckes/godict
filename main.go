@@ -20,7 +20,7 @@ func storeExists() bool {
 	return !os.IsNotExist(err)
 }
 
-func initializeStore(store *RecordStore)  {
+func initializeStore(store *RecordStore) {
 	if !storeExists() {
 		log.Println("No existing store found. Will initialize a new one.")
 	} else {
@@ -38,14 +38,31 @@ func initializeStore(store *RecordStore)  {
 	}
 }
 
+func writeStore(store *RecordStore) {
+	// TODO: error handling here is pretty bad, attempt to save to a
+	// couple other places (/tmp?, $HOME?) to avoid data loss.
+	// TODO: remove double logging on errors.
+	marshalled, err := proto.Marshal(store)
+	if err != nil {
+		// TODO: this is pretty bad, attempt to save to a couple other
+		// places to avoid data loss.
+		log.Fatalf("Couldn't serialize new store: %s. Exiting.\n", err)
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(storePath, marshalled, 0644)
+	if err != nil {
+		log.Fatalf("Couldn't write new store to disk: %s. Exiting.\n", err)
+		panic(err)
+	}
+	log.Printf("Written to disk: %s\n", store)
+}
+
 func main() {
 	store := &RecordStore{}
 
 	initializeStore(store)
-	r := &RecordStore{Record: []*Record{{Word: proto.String("abc"), Count: proto.Int32(1), Resolved: proto.Bool(true)}}}
-	marshalled, err := proto.Marshal(r)
-	check(err)
 
-	ioutil.WriteFile(storePath, marshalled, 0644)
-	log.Printf("Written to disk: %s\n", r)
+	r := &RecordStore{Record: []*Record{{Word: proto.String("abc"), Count: proto.Int32(1)}}}
+	writeStore(r)
 }
