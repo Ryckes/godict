@@ -20,9 +20,7 @@ func storeExists() bool {
 	return !os.IsNotExist(err)
 }
 
-func main() {
-	store := &RecordStore{}
-
+func initializeStore(store *RecordStore)  {
 	if !storeExists() {
 		log.Println("No existing store found. Will initialize a new one.")
 	} else {
@@ -38,7 +36,12 @@ func main() {
 		}
 		log.Printf("Read from disk: %s\n", store)
 	}
+}
 
+func main() {
+	store := &RecordStore{}
+
+	initializeStore(store)
 	r := &RecordStore{Record: []*Record{{Word: proto.String("abc"), Count: proto.Int32(1), Resolved: proto.Bool(true)}}}
 	marshalled, err := proto.Marshal(r)
 	check(err)
