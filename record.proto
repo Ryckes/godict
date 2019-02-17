@@ -1,0 +1,14 @@
+
+syntax = "proto2";
+
+option go_package = "main";
+
+message Record {
+    optional string word = 1;
+    optional int32 count = 2;
+    optional bool resolved = 3;
+}
+
+message RecordStore {
+    repeated Record record = 1;
+}
