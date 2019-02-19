@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"github.com/golang/protobuf/proto"
+	"github.com/mitchellh/go-homedir"
 	"io"
 	"io/ioutil"
 	"log"
@@ -53,16 +54,24 @@ func writeStore(storePath string, store *RecordStore) {
 
 func readConfig(configPath string) *Configuration {
 	config := &Configuration{}
-	data, _ := ioutil.ReadFile(configPath)
+	data, err := ioutil.ReadFile(configPath)
+
+	if err != nil {
+		log.Fatalf("Couldn't read config file: %s.\n", err)
+	}
 
 	proto.UnmarshalText(string(data), config)
 	return config
 }
 
 func main() {
-	config := readConfig("./config.textproto")
-	storePath := config.GetStorePath()
-	
+	configPath, _ := homedir.Expand("~/.config/godict/config.textproto")
+	config := readConfig(configPath)
+	storePath, err := homedir.Expand(config.GetStorePath())
+	if err != nil {
+		log.Fatalf("Invalid store path: %s.\n", err)
+	}
+
 	store := &RecordStore{}
 
 	initializeStore(storePath, store)
