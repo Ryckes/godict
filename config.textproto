@@ -1,1 +1,2 @@
 store_path: "./godict-store"
+max_nonpersisted_records: 4

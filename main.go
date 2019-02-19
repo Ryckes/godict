@@ -68,6 +68,7 @@ func main() {
 	initializeStore(storePath, store)
 
 	reader := bufio.NewReader(os.Stdin)
+	var nonpersistedRecords int32 = 0
 	for {
 		text, err := reader.ReadString('\n')
 		if err == io.EOF {
@@ -87,6 +88,12 @@ func main() {
 		}
 
 		store.Record[text].Count = proto.Int32(store.Record[text].GetCount() + 1)
+
+		nonpersistedRecords += 1
+		if nonpersistedRecords > config.GetMaxNonpersistedRecords() {
+			writeStore(storePath, store)
+			nonpersistedRecords = 0
+		}
 	}
 
 	writeStore(storePath, store)
