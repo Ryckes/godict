@@ -105,5 +105,7 @@ func main() {
 		}
 	}
 
-	writeStore(storePath, store)
+	if nonpersistedRecords > 0 {
+		writeStore(storePath, store)
+	}
 }
