@@ -9,7 +9,7 @@ message Configuration {
     // If the file exists, it must contain a valid RecordStore, and be readable.
     optional string store_path = 1;
 
-    // Number of records to keep in memory before saving to disk.
-    // Records are always saved to disk on application exit.
-    optional int32 max_nonpersisted_records = 2;
+    // Number of changes to keep in memory before saving to disk.
+    // Changes are always saved to disk on application exit.
+    optional int32 max_nonpersisted_changes = 2;
 }

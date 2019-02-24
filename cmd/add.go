@@ -34,7 +34,7 @@ var addCommand = &cobra.Command{
 	storage.InitializeStore(storePath, store)
 
 	reader := bufio.NewReader(os.Stdin)
-	var nonpersistedRecords int32 = 0
+	var nonpersistedChanges int32 = 0
 	for {
 		text, err := reader.ReadString('\n')
 		if err == io.EOF {
@@ -55,14 +55,14 @@ var addCommand = &cobra.Command{
 
 		store.Record[text].Count = proto.Int32(store.Record[text].GetCount() + 1)
 
-		nonpersistedRecords += 1
-		if nonpersistedRecords > config.GetMaxNonpersistedRecords() {
+		nonpersistedChanges += 1
+		if nonpersistedChanges > config.GetMaxNonpersistedChanges() {
 			storage.WriteStore(storePath, store)
-			nonpersistedRecords = 0
+			nonpersistedChanges = 0
 		}
 	}
 
-	if nonpersistedRecords > 0 {
+	if nonpersistedChanges > 0 {
 		storage.WriteStore(storePath, store)
 	}
   },
