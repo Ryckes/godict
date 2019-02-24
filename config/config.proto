@@ -1,7 +1,7 @@
 
 syntax = "proto2";
 
-option go_package = "main";
+option go_package = "config";
 
 message Configuration {
     // Path the store will be read from, and written to.
