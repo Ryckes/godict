@@ -20,7 +20,9 @@ func init() {
 var addCommand = &cobra.Command{
 	Use:   "add",
 	Short: "Start new recording session",
-	Long:  `Start new recording session`,
+	Long:  `Start new recording session.
+
+Enter 'quit' or press Ctrl-D to exit.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config := config.ReadAndMaybeCreateConfig()
 		storePath, err := homedir.Expand(config.GetStorePath())
