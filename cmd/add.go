@@ -1,4 +1,3 @@
-
 package cmd
 
 import (
@@ -19,51 +18,51 @@ func init() {
 }
 
 var addCommand = &cobra.Command{
-  Use:   "add",
-  Short: "Start new recording session",
-  Long:  `Start new recording session`,
-  Run: func(cmd *cobra.Command, args []string) {
-	config := config.ReadConfig()
-	storePath, err := homedir.Expand(config.GetStorePath())
-	if err != nil {
-		log.Fatalf("Invalid store path: %s.\n", err)
-	}
-
-	store := &storage.RecordStore{}
-
-	storage.InitializeStore(storePath, store)
-
-	reader := bufio.NewReader(os.Stdin)
-	var nonpersistedChanges int32 = 0
-	for {
-		text, err := reader.ReadString('\n')
-		if err == io.EOF {
-			log.Println("Quitting...")
-			break
+	Use:   "add",
+	Short: "Start new recording session",
+	Long:  `Start new recording session`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config := config.ReadAndMaybeCreateConfig()
+		storePath, err := homedir.Expand(config.GetStorePath())
+		if err != nil {
+			log.Fatalf("Invalid store path: %s.\n", err)
 		}
 
-		text = strings.TrimSpace(text)
+		store := &storage.RecordStore{}
 
-		if text == "quit" {
-			log.Println("Quitting...")
-			break
+		storage.InitializeStore(storePath, store)
+
+		reader := bufio.NewReader(os.Stdin)
+		var nonpersistedChanges int32 = 0
+		for {
+			text, err := reader.ReadString('\n')
+			if err == io.EOF {
+				log.Println("Quitting...")
+				break
+			}
+
+			text = strings.TrimSpace(text)
+
+			if text == "quit" {
+				log.Println("Quitting...")
+				break
+			}
+
+			if store.Record[text].GetCount() == 0 {
+				store.Record[text] = &storage.Record{}
+			}
+
+			store.Record[text].Count = proto.Int32(store.Record[text].GetCount() + 1)
+
+			nonpersistedChanges += 1
+			if nonpersistedChanges > config.GetMaxNonpersistedChanges() {
+				storage.WriteStore(storePath, store)
+				nonpersistedChanges = 0
+			}
 		}
 
-		if store.Record[text].GetCount() == 0 {
-			store.Record[text] = &storage.Record{}
-		}
-
-		store.Record[text].Count = proto.Int32(store.Record[text].GetCount() + 1)
-
-		nonpersistedChanges += 1
-		if nonpersistedChanges > config.GetMaxNonpersistedChanges() {
+		if nonpersistedChanges > 0 {
 			storage.WriteStore(storePath, store)
-			nonpersistedChanges = 0
 		}
-	}
-
-	if nonpersistedChanges > 0 {
-		storage.WriteStore(storePath, store)
-	}
-  },
+	},
 }
