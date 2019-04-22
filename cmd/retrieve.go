@@ -97,6 +97,7 @@ Enter 'quit' or press Ctrl-D to exit.`,
 			if nonpersistedChanges > config.GetMaxNonpersistedChanges() {
 				storage.WriteStore(storePath, store)
 				nonpersistedChanges = 0
+				log.Printf("There are %d unresolved records.\n", len(unresolvedKeys))
 			}
 		}
 
